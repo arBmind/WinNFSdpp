@@ -1,0 +1,23 @@
+var FileInfo = loadExtension("qbs.FileInfo");
+
+var libBase = 'C:/C/Lib';
+
+var googleTestDir = 'googletest'
+var googleTestLib = 'gtest'
+var googleTestMainLib = 'gtest_main'
+
+function binLibFolder(qbs) {
+	if (qbs.toolchain.contains('mingw')) {
+		return 'mingw5';
+	}
+	if (qbs.toolchain.contains('msvc')) {
+		return 'VS2015x64';
+	}
+}
+
+function googleTestIncludePath() {
+	return FileInfo.joinPaths(libsBase, googleTestDir, 'include');
+}
+function googleTestLibPath(qbs) {
+	return FileInfo.joinPaths(libsBase, googleTestDir, binLibFolder, qbs.buildVariant);
+}
