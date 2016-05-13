@@ -68,6 +68,7 @@ Product {
     cpp.includePaths: [ "." ]
     cpp.dynamicLibraries: [ "ws2_32", "mswsock" ]
     cpp.minimumWindowsVersion: '6.2' // windows 8
+    cpp.linkerFlags: "/ignore:4221"
 
     Export {
         Depends { name: "cpp" }

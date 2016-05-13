@@ -1,23 +1,42 @@
 var FileInfo = loadExtension("qbs.FileInfo");
 
-var libBase = 'C:/C/Lib';
+var libsBase = 'C:\\Libraries\\';
 
-var googleTestDir = 'googletest'
-var googleTestLib = 'gtest'
-var googleTestMainLib = 'gtest_main'
+var googleTestDir = 'googletest-distribution';
+var googleTestLib = 'gtest';
+var googleTestMainLib = 'gtest_main';
+
+var gFlagsDir = 'gflags';
+var gFlagsLib = 'gflags_static';
+
+var gLogDir = 'google-glog';
+var gLogLib = 'glog'
 
 function binLibFolder(qbs) {
-	if (qbs.toolchain.contains('mingw')) {
-		return 'mingw5';
-	}
-	if (qbs.toolchain.contains('msvc')) {
-		return 'VS2015x64';
-	}
+        if (qbs.toolchain.contains('mingw')) {
+                return 'mingw5';
+        }
+        if (qbs.toolchain.contains('msvc')) {
+                return 'VS2015x64';
+        }
 }
 
 function googleTestIncludePath() {
-	return FileInfo.joinPaths(libsBase, googleTestDir, 'include');
+        return FileInfo.joinPaths(libsBase, googleTestDir, 'include');
 }
 function googleTestLibPath(qbs) {
-	return FileInfo.joinPaths(libsBase, googleTestDir, binLibFolder, qbs.buildVariant);
+    return FileInfo.joinPaths(libsBase, googleTestDir, binLibFolder(qbs), qbs.buildVariant);
+}
+
+function gFlagsIncludePath() {
+    return FileInfo.joinPaths(libsBase, gFlagsDir, 'include');
+}
+function gFlagsLibPath(qbs) {
+    return FileInfo.joinPaths(libsBase, gFlagsDir, binLibFolder(qbs), qbs.buildVariant);
+}
+function gLogIncludePath(qbs) {
+    return FileInfo.joinPaths(libsBase, gLogDir, binLibFolder(qbs), qbs.buildVaraint);
+}
+function gLogLibPath(qbs) {
+    return FileInfo.joinPaths(libsBase, gLogDir, binLibFolder(qbs), qbs.buildVariant);
 }
