@@ -34,8 +34,8 @@ function gFlagsIncludePath() {
 function gFlagsLibPath(qbs) {
     return FileInfo.joinPaths(libsBase, gFlagsDir, binLibFolder(qbs), qbs.buildVariant);
 }
-function gLogIncludePath(qbs) {
-    return FileInfo.joinPaths(libsBase, gLogDir, binLibFolder(qbs), qbs.buildVaraint);
+function gLogIncludePath() {
+    return FileInfo.joinPaths(libsBase, gLogDir, 'include');
 }
 function gLogLibPath(qbs) {
     return FileInfo.joinPaths(libsBase, gLogDir, binLibFolder(qbs), qbs.buildVariant);

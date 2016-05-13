@@ -66,9 +66,10 @@ Project {
 
         Export {
             Depends { name: "cpp"}
+            Depends { name: "GFlags"}
             cpp.includePaths: Config.gLogIncludePath()
-            cpp.libraryPaths: Config.gLogLibPath()
-            cpp.staticLabraries: Config.gLogLib
+            cpp.libraryPaths: Config.gLogLibPath(qbs)
+            cpp.staticLibraries: Config.gLogLib
         }
     }
 }
