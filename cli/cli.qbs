@@ -1,6 +1,7 @@
 import qbs
 
 CppApplication {
+    id: root
     consoleApplication: true
 
     name: "WinNFSdpp"
@@ -9,8 +10,9 @@ CppApplication {
     files: [
         "main.cpp",
     ]
-
     Depends { name: "cpp" }
     Depends { name: "WinNFSdppLib" }
-    Depends { name : "GLog" }
+    Depends { name: "GLog" }
+
+    cpp.defines: "WINNFSDPP_VERSION=\"" + root.version + "\""
 }

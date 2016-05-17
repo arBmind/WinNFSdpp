@@ -15,6 +15,11 @@
 #include <fstream>
 #include <cstdint>
 
+#include <gflags/gflags.h>
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
+
 struct config_reader_t {
   config_reader_t(mount_aliases_t& aliases)
     : aliases_m(aliases)
@@ -104,32 +109,22 @@ private:
 
 #include "winfs/winfs_directory.h"
 
+DEFINE_bool(log, true, "Enables logging, otherwise prints to stderr");
+DEFINE_string(user_id,"0", "User ID");
+DEFINE_string(group_id,"0", "Group ID");
+DEFINE_string(pathFile,"", "File with local export Paths");
+
 int main(int argc, char *argv[])
 {
-//  {
-//    auto handle = unique_directory_t::by_path(L"C:/C/Bin");
-//    volume_file_id_t id;
-//    handle.id(id);
-//    std::cout << std::hex << id.VolumeSerialNumber << std::dec << std::endl;
+    const std::string version = WINNFSDPP_VERSION;
 
-//    //handle.volume_info();
+    gflags::SetUsageMessage("<flags> <export path> <alias path>");
+    gflags::SetVersionString(version);
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    google::InitGoogleLogging(argv[0]);
 
-//    std::wcout << handle.path() << '"' << std::endl;
-//    std::wcout << handle.fullpath() << '"' << std::endl;
-//    handle.enumerate([&](directory_entry_t entry) {
-//      if (entry.hidden() || entry.relative()) return true;
-//        std::wcout << entry.filename()
-//                   << (entry.directory() ? '/' : ' ')
-//                   << entry.size() << std::endl;
-//        auto sub = handle.by_id(entry.id());
-//        std::wcout << sub.fullpath() << '"' << std::endl;
 
-//        return false;
-//      });
-//  }
-
-  wsa_session_t wsa_session(2, 2);
-
-  program_t program;
-  program.run();
+    wsa_session_t wsa_session(2, 2);
+    program_t program;
+    program.run();
 }
