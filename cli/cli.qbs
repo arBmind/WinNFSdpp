@@ -12,4 +12,5 @@ CppApplication {
 
     Depends { name: "cpp" }
     Depends { name: "WinNFSdppLib" }
+    Depends { name : "GLog" }
 }
