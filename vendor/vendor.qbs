@@ -18,9 +18,9 @@ Project {
 
         Export {
             Depends { name: "cpp" }
-            cpp.runtimeLibrary: "static"
             cpp.cxxLanguageVersion: "c++14"
             cpp.includePaths: [ "." ]
+            cpp.enableExceptions: true
         }
     }
 
@@ -44,6 +44,32 @@ Project {
             Depends { name: "GoogleTest" }
             Depends { name: "cpp" }
             cpp.staticLibraries: Config.googleTestMainLib
+        }
+    }
+
+    Product {
+        name: "GFlags"
+
+        Export {
+            Depends { name: "cpp" }
+            cpp.includePaths: Config.gFlagsIncludePath()
+            cpp.libraryPaths: Config.gFlagsLibPath(qbs)
+            cpp.staticLibraries: Config.gFlagsLib
+            cpp.dynamicLibraries: 'shlwapi'
+        }
+    }
+
+    Product {
+        name: "GLog"
+
+        Depends { name: "GFlags" }
+
+        Export {
+            Depends { name: "cpp"}
+            Depends { name: "GFlags"}
+            cpp.includePaths: Config.gLogIncludePath()
+            cpp.libraryPaths: Config.gLogLibPath(qbs)
+            cpp.staticLibraries: Config.gLogLib
         }
     }
 }
