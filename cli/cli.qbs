@@ -8,6 +8,7 @@ CppApplication {
     version: "0.0.0"
 
     files: [
+        "cli.h",
         "main.cpp",
     ]
     Depends { name: "cpp" }
