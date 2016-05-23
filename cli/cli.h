@@ -20,28 +20,37 @@
 #include <cstdint>
 #include "winfs/winfs_directory.h"
 #include "container/string_convert.h"
+#include "winfs/file_change_notifier.h"
 
 
-struct config_reader_t {
-    config_reader_t(mount_aliases_t& aliases)
-        : aliases_m(aliases)
+/*! @brief Reads and watches a path configuration file
+ * */
+struct path_config_file_syncer_t {
+    path_config_file_syncer_t(mount_aliases_t& aliases,std::string file_path)
+        : path_config_file_syncer_t(aliases,file_path,aliases.create_source())
     {}
 
-    static void trim_space(gsl::cwstring_span<>& span) {
-        while (!span.empty() && std::iswspace(span[0])) span = span.subspan(1);
-        while (!span.empty() && std::iswspace(span.last<1>()[0])) span = span.subspan(0, span.size() - 1);
+    path_config_file_syncer_t(mount_aliases_t& aliases,std::string file_path,
+                              mount_aliases_t::source_t source)
+        : aliases_m(aliases), file_path_m(file_path), source_m(source),
+          notifier_m(convert::to_wstring(file_path_m),
+                     [this] (file_change_notifier::full_path_t) {read();})
+    {
+        read();
+        notifier_m.start_watching();
     }
 
-    int read(std::string& filepath) {
-        auto source = aliases_m.create_source();
-        read(filepath, source);
-        return source;
-    }
+static void trim_space(gsl::cwstring_span<>& span) {
+    while (!span.empty() && std::iswspace(span[0])) span = span.subspan(1);
+    while (!span.empty() && std::iswspace(span.last<1>()[0])) span = span.subspan(0, span.size() - 1);
+}
 
-    void read(const std::string& filepath, int source) {
+private:
+
+    void read() {
         LOG(INFO) << "Opening path configuration file with name \""
-                  << filepath << "\" and source id \"" << source << "\"";
-        std::wifstream ifs(filepath);
+                  << file_path_m << "\" and source id \"" << source_m << "\"";
+        std::wifstream ifs(file_path_m);
         std::wstring line;
         mount_aliases_t::alias_vector_t aliases;
         while (std::getline(ifs, line)) {
@@ -53,11 +62,13 @@ struct config_reader_t {
                       << new_alias.second << "\"";
             aliases.push_back(std::move(new_alias));
         }
-        aliases_m.set(source, aliases);
+        aliases_m.set(source_m, aliases);
     }
 
-private:
     mount_aliases_t& aliases_m;
+    mount_aliases_t::source_t source_m;
+    std::string file_path_m;
+    file_change_notifier notifier_m;
 };
 
 struct program_t {
@@ -87,8 +98,7 @@ struct program_t {
         portmap_server_m.add(nfs3::PROGRAM, nfs3::VERSION, nfs3::PORT);
 
         auto source = mount_server_m.aliases().create_source();
-        config_reader_t config_reader(mount_server_m.aliases());
-        config_reader.read(FLAGS_pathFile, source);
+        path_config_file_syncer_t config_reader(mount_server_m.aliases(),FLAGS_pathFile);
 
         restore_cache();
 
