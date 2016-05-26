@@ -7,8 +7,9 @@
 
 file_change_notifier::
 file_change_notifier(full_path_t file_path,
-                     std::function<void(full_path_t, change_event)> callback,
-                     change_event events) :
+                     change_event events,
+                     std::function<void(full_path_t, change_event)> callback
+                     ) :
     callback_(callback), events_(events), notification_handle_(INVALID_HANDLE_VALUE), continue_waiting_(false)
 {
     split_path(file_path,this->directory_path_,this->file_name_);

@@ -46,8 +46,9 @@ public:
     */
     file_change_notifier(full_path_t file_path,
                          std::function<void(full_path_t)> callback)
-        : file_change_notifier(file_path,std::bind(callback,std::placeholders::_1),
-                               change_event::all)
+        : file_change_notifier(file_path,change_event::all,
+                               std::bind(callback,std::placeholders::_1)
+                               )
     {}
 
     /*! @brief Starts to call the callback for any change since constructing*/
@@ -63,8 +64,9 @@ public:
      * constructor of this class, but refers still to the same file.
     */
     file_change_notifier(full_path_t file_path,
-                         std::function<void(full_path_t, change_event)> callback,
-                         change_event events);
+                         change_event events,
+                         std::function<void(full_path_t, change_event)> callback
+                         );
 
     /*! @brief Exception class for the windows API aka WIN32 functions which are using GetLastError*/
     class win32_exception : public std::runtime_error{
