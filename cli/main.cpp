@@ -20,16 +20,20 @@ int main(int argc, char *argv[])
 {
     const std::string version = WINNFSDPP_VERSION;
 
-    gflags::SetUsageMessage("<flags> <export path> <alias path>");
+    gflags::SetUsageMessage("<flags>");
     gflags::SetVersionString(version);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     google::InitGoogleLogging(argv[0]);
     LOG(INFO) << "WINNFSDPP Version: " << version;
+    try{
+        LOG(INFO) << "Starting windows socket sesstion";
+        wsa_session_t wsa_session(2, 2);
+        program_t program;
+        program.run();
+        LOG(INFO) << "Returned from CLI loop, exiting";
+    } catch (const std::exception &e) {
+        LOG(ERROR) << e.what();
+    }
 
-    LOG(INFO) << "Starting windows socket sesstion";
-    wsa_session_t wsa_session(2, 2);
-    program_t program;
-    program.run();
-    LOG(INFO) << "Returned from CLI loop, exiting";
 }

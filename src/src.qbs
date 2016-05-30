@@ -67,6 +67,7 @@ Product {
 
     Depends { name: "cpp" }
     Depends { name: "GSL" }
+    Depends { name: "GLog" }
     cpp.includePaths: [ "." ]
     cpp.dynamicLibraries: [ "ws2_32", "mswsock" ]
     cpp.minimumWindowsVersion: '6.2' // windows 8
@@ -75,6 +76,7 @@ Product {
     Export {
         Depends { name: "cpp" }
         Depends { name: "GSL" }
+        Depends { name: "GLog" }
         cpp.cxxLanguageVersion: "c++14"
         cpp.includePaths: [ "." ]
         cpp.dynamicLibraries: [ "ws2_32", "mswsock" ]
