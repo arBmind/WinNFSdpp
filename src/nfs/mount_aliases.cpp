@@ -107,8 +107,7 @@ mount_aliases_t::add_safe(source_t source, const windows_path_t& windows_path, c
 void
 mount_aliases_t::set_aliases_safe(source_t source, const alias_vector_t& alias_vector) {
   // remove old mounts
-  auto end_it = store_m.end();
-  for (auto it = store_m.begin(); it != end_it;) {
+  for (auto it = store_m.begin(); it != store_m.end();) {
       const entry_t& entry = *it;
       if (entry.source == source) {
           it = store_m.erase(it);
