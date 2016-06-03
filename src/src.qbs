@@ -50,6 +50,8 @@ Product {
         "server/portmap_server.h",
         "server/rpc_server.cpp",
         "server/rpc_server.h",
+        "winfs/file_change_notifier.cpp",
+        "winfs/file_change_notifier.h",
         "winfs/windows_handle.cpp",
         "winfs/windows_handle.h",
         "winfs/winfs.h",
