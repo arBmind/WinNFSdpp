@@ -18,6 +18,8 @@ struct binary_reader_t
   {}
 
   static binary_reader_t binary(const binary_t& binary) {
+    if (binary.empty())
+        return binary_reader_t();
     auto begin = &binary[0];
     auto end = begin + binary.size();
     return binary_reader_t(begin, end);
@@ -82,6 +84,6 @@ struct binary_reader_t
   }
 
 private:
-  it begin_m;
-  it end_m;
+  it begin_m = nullptr;
+  it end_m = nullptr;
 };
