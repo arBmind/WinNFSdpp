@@ -7,6 +7,8 @@
 #include <string>
 #include <cstdint>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 
 struct binary_reader_t
 {
@@ -81,6 +83,14 @@ struct binary_reader_t
     result.resize(size);
     get_binary(offset, (uint8_t*)&result[0], sizeof(wchar_t) * size);
     return result;
+  }
+
+  std::string get_hex_string(size_t offset, size_t size) const{
+      std::stringstream s; s << "0x";
+      for (auto i = begin_m; i != end_m; ++i){
+          s << std::setfill ('0') << std::setw(sizeof(*i)*2) << std::hex << +*i;
+      }
+      return s.str();
   }
 
 private:
