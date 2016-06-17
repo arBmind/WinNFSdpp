@@ -60,8 +60,13 @@ binary_t rpc_router_t::handle(const router_args_t& server_args) const
       return auth_reply.procedure_unavailable();
     }
   procedure_args_t procedure_args { server_args.sender, call_body.parameter_reader };
-  DLOG(INFO) << "Calling procedure " << procedure.name << " by sender " << procedure_args.sender;
   auto procedure_result = procedure.callback(procedure_args);
+
+  DLOG(INFO) << "Calling procedure " << procedure.name << " by sender " << procedure_args.sender
+             << " and results "
+             << (binary_reader_t::binary(procedure_result.response).valid() ?
+                     binary_reader_t::binary(procedure_result.response).get_hex_string(0,4)
+                        : " invalid results");
   if (procedure_result.status == procedure_result_t::INVALID_ARGUMENTS) {
       std::stringstream error_log_message;
       error_log_message << "RPC_ROUTER garbage args: " << call_body.program << " v" << call_body.version << " procedure: ";

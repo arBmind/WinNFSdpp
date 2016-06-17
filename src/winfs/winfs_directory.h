@@ -53,11 +53,17 @@ namespace winfs {
   struct object_t;
 
   struct directory_t {
-    static bool create(const std::wstring& path) {
-      return ::CreateDirectoryW(
+
+    static DWORD create(const std::wstring& path) {
+      DWORD code = ERROR_SUCCESS;
+      const bool result = ::CreateDirectoryW(
             path.c_str(), // FileName
             nullptr // SecurityAttributes
             );
+      if (!result){
+          code = GetLastError();
+      }
+      return code;
     }
 
     static bool remove(const std::wstring& path) {

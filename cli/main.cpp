@@ -13,6 +13,7 @@ DEFINE_string(user_id,"0", "User ID");
 DEFINE_string(group_id,"0", "Group ID");
 DEFINE_string(pathFile,"", "File with local export Paths");
 DEFINE_string(cachePath,"./mount_cache", "Mount cache path");
+DEFINE_string(id,"0 0", "WARNING IGNORED RIGHT NOW"); //TODO add handling of ID
 
 #include "cli.h"
 

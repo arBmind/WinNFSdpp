@@ -716,7 +716,7 @@ namespace nfs3
       result.size = standard_info.EndOfFile.QuadPart;
       result.used = standard_info.AllocationSize.QuadPart;
       std::cout << "TO size: " << result.size << " used: " << result.used << std::endl;
-      result.fsid = 7;
+      result.fsid = id.VolumeSerialNumber;
       result.fileid = *reinterpret_cast<const uint64_t*>(&id.FileId); // filehandle_view.volume_file_id.FileId; - too large
       result.atime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.LastAccessTime);
       result.mtime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.LastWriteTime);
@@ -953,7 +953,8 @@ namespace nfs3
     lookup_filehandle.volume_file_id = lookup_id;
 
     result.status = status_t::OK;
-    std::wcout << "...success " << lookup_file.fullpath() << std::endl;
+    DLOG(INFO) << "LOOKUP retunred " << binary_reader_t::binary(result.object_handle).get_hex_string(0,sizeof(result.object_handle))
+               <<  " for directory" << convert::to_string(lookup_file.fullpath());
     return result;
   }
 
@@ -1291,7 +1292,6 @@ namespace nfs3
 
   mkdir_result_t rpc_program::mkdir(const mkdir_args_t& args)
   {
-    std::cout << "MkDir..." << std::endl;
     mkdir_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.where.directory);
@@ -1342,12 +1342,13 @@ namespace nfs3
     auto dirpath = object.fullpath();
     auto filepath = dirpath + L'\\' + convert::to_wstring(args.where.name);
 
-    success = winfs::directory_t::create(filepath);
+    uint32_t create_success = winfs::directory_t::create(filepath);
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (create_success) {
+        assert(create_success == 183);
+        result.status = status_t::ERR_EXIST;//Thats the one
         return result;
       }
     auto target = winfs::open_path<FILE_READ_ATTRIBUTES>(filepath);
@@ -2115,6 +2116,13 @@ namespace nfs3
         return result_t::respond(write_commit_result(result));
       };
 
+    auto operation_not_supported = [](const args_t& args)->result_t {
+        LOG(WARNING) << "Not supported NFS function has been called";
+        binary_builder_t builder;
+        builder.append32(nfs3::status_t::ERR_NOTSUPP);
+        return result_t::respond(builder.build());
+    };
+
     auto& calls = result.procedures;
     calls.set( 0, { "NULL", null_rpc });
     calls.set( 1, { "GETATTR", get_attr_rpc });
@@ -2126,12 +2134,12 @@ namespace nfs3
     calls.set( 7, { "WRITE", write_rpc });
     calls.set( 8, { "CREATE", create_rpc });
     calls.set( 9, { "MKDIR", mkdir_rpc });
-    calls.set(10, { "SYMLINK", {}/*symlink_rpc*/ });
-    calls.set(11, { "MKNOD", {}/*mk_node_rpc*/ });
+    calls.set(10, { "SYMLINK", operation_not_supported/*symlink_rpc*/ });
+    calls.set(11, { "MKNOD", operation_not_supported/*mk_node_rpc*/ });
     calls.set(12, { "REMOVE", remove_rpc });
     calls.set(13, { "RMDIR", rmdir_rpc });
     calls.set(14, { "RENAME", rename_rpc });
-    calls.set(15, { "LINK", {}/*link_rpc*/ });
+    calls.set(15, { "LINK", operation_not_supported/*link_rpc*/ });
     calls.set(16, { "READDIR", read_dir_rpc });
     calls.set(17, { "READDIRPLUS", read_dir_plus_rpc });
     calls.set(18, { "FSSTAT", fs_stat_rpc });

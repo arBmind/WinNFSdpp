@@ -14,8 +14,8 @@
 
 TEST(file_change_notifier,constructs){
     try{
-    file_change_notifier fn = {L"kds:klklsd\\sdd.txt",{}};
-    } catch(const file_change_notifier::win32_exception &e){
+    windows::file_change_notifier fn = {L"kds:klklsd\\sdd.txt",{}};
+    } catch(const windows::win32_exception &e){
         if (e.code() >1 ){
             SUCCEED();
         } else{
@@ -60,6 +60,7 @@ private:
 };
 
 TEST_F(file_change_fixture,detects_writing_change){
+    using namespace windows;
     std::atomic_bool changed = false;
     std::function<void(file_change_notifier::full_path_t)> f =
             [&changed] (file_change_notifier::full_path_t) {
@@ -75,6 +76,7 @@ TEST_F(file_change_fixture,detects_writing_change){
 }
 
 TEST_F(file_change_fixture,detects_multiple_changes){
+    using namespace windows;
     std::atomic_bool changed = false;
     std::function<void(file_change_notifier::full_path_t)> f =
             [&changed] (file_change_notifier::full_path_t) {

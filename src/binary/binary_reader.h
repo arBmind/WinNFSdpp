@@ -87,7 +87,8 @@ struct binary_reader_t
 
   std::string get_hex_string(size_t offset, size_t size) const{
       std::stringstream s; s << "0x";
-      for (auto i = begin_m; i != end_m; ++i){
+      it requested_end = (size >= this->size()) ? end_m : begin_m + size;
+      for (auto i = begin_m; i != requested_end; ++i){
           s << std::setfill ('0') << std::setw(sizeof(*i)*2) << std::hex << +*i;
       }
       return s.str();

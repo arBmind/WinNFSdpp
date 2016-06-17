@@ -52,6 +52,8 @@ Product {
         "server/rpc_server.h",
         "winfs/file_change_notifier.cpp",
         "winfs/file_change_notifier.h",
+        "winfs/windows_error.cpp",
+        "winfs/windows_error.h",
         "winfs/windows_handle.cpp",
         "winfs/windows_handle.h",
         "winfs/winfs.h",
