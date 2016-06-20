@@ -2,11 +2,9 @@
 
 #include "rpc/rpc.h"
 
-#define DEBUG_NFS_MOUNT_RPC
-
-#ifdef DEBUG_NFS_MOUNT_RPC
-#include <iostream>
-#endif
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
 
 namespace mount {
   namespace {
@@ -36,7 +34,7 @@ namespace mount {
   } // namespace
 
   mount_result_t rpc_program::mount(const hostname_t& sender, const directory_path_t& directory_path) {
-    std::cout << "Mount: " << directory_path << " for " << sender << std::endl;
+    LOG(INFO) << "Mount: " << directory_path << " for " << sender;
     mount_result_t result;
 
     mount_cache_m.mount_session([&](const auto& session) {
@@ -57,7 +55,7 @@ namespace mount {
           }
 
         if (mount_it != session.end()) {
-            std::cout << "Mount success!" << std::endl;
+            LOG(INFO) << "Mount success!";
             result.status = status_t::OK;
             result.filehandle = mount_it->second.filehandle;
             // result.auth_flavors = ??
@@ -69,13 +67,13 @@ namespace mount {
 
   void rpc_program::unmount(const hostname_t& sender, const directory_path_t& directory_path)
   {
-    std::cout << "Unmount: " << directory_path << " for " << sender << std::endl;
+    LOG(INFO) << "Unmount: " << directory_path << " for " << sender;
     mount_cache_m.unmount(sender, directory_path);
   }
 
   void rpc_program::unmount_all(const hostname_t& sender)
   {
-    std::cout << "Unmount All: " << sender << std::endl;
+    LOG(INFO) << "Unmount All: " << sender;
     mount_cache_m.unmount_client(sender);
   }
 

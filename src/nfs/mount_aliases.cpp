@@ -4,6 +4,9 @@
 #include "winfs/winfs_object.h"
 
 #include <iostream>
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
 
 mount_aliases_t::windows_path_t
 mount_aliases_t::alias_subpath_to_windows(const alias_path_t& alias_path) {
@@ -99,8 +102,8 @@ mount_aliases_t::add_safe(source_t source, const windows_path_t& windows_path, c
   entry.alias_path = alias_path.empty() ? windows_to_alias_path(windows_path) : alias_path;
   entry.source = source;
   store_m.push_back(entry);
-  std::wcout << "Alias by " << entry.source << " for " << entry.windows_path;
-  std::cout << " at " << entry.alias_path << std::endl;
+  LOG(INFO) << "Alias by " << std::to_string(entry.source) << " for " << convert::to_string(entry.windows_path)
+            << " at " << entry.alias_path;
   return true;
 }
 

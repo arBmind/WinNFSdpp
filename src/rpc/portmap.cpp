@@ -6,7 +6,9 @@
 
 #include <algorithm>
 
-#include <iostream>
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
 
 namespace portmap {
   namespace {
@@ -52,10 +54,10 @@ namespace portmap {
 
   uint32_t rpc_program::get_port(const mapping_t& mapping) const
   {
-    std::cout << "GetPort: program: " << mapping.program << " version: " << mapping.version << " prot: " << mapping.protocol << " for " << std::endl;
+    LOG(INFO) << "GetPort: program: " << mapping.program << " version: " << mapping.version << " prot: " << mapping.protocol;
     auto it = find(store_m, mapping);
     if (it == store_m.end()) return 0;
-    std::cout << "... Success port: " << it->port << std::endl;
+    LOG(INFO) << "... Success port: " << it->port << std::endl;
     return it->port;
   }
 
