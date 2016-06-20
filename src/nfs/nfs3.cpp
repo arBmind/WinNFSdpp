@@ -1987,6 +1987,7 @@ namespace nfs3
     result.file_wcc.after.set(file_attr_from_BASIC_and_STANDARD_INFO(basic_info, standard_info, filehandle_view.volume_file_id));
 
     result.status = status_t::OK;
+    result.verifier = this->cookie_verifier_m;
     DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     return result;
