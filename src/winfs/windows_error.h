@@ -42,11 +42,13 @@ private:
  * */
 class win32_return_t : private std::pair<bool, win32_error_code_t> {
 public:
-    /*! @brief to manually inidcate a successfull call
+    /*! @brief To be used by calling the win32 function in this constructor parameter list
+     * @param returned_as_bool Return of win32
+     * @attention Assumes true equals successfull and Error only set iff false;
      * */
-    constexpr win32_return_t () : std::pair<bool, win32_error_code_t> (true,0) {}
+    explicit win32_return_t (bool returned_as_bool);
 
-    win32_return_t (bool func_return, win32_error_code_t get_last_error_return);
+    explicit win32_return_t (bool func_return, win32_error_code_t get_last_error_return);
     /*! @brief Will execute the given win32_call, and store the results accordingly
      * @attention Will not store an error if the win32 call returned true
      * @param win32_call Callback to a win32 bool returning function, which will
@@ -75,6 +77,9 @@ public:
     bool operator!() const{
         return !this->first;
     }
+    explicit operator win32_error_code_t() const{
+        return get_error();
+    }
     /*! @brief Returns the error code which was retrieved after the win32 call or throws an exception if no error was set
      * @throws std::logic_error
      * */
@@ -88,6 +93,5 @@ public:
 
 };
 
-uint32_t to_nfs3_error(win32_error_code_t win32_error);
 }
 

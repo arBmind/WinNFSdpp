@@ -17,6 +17,8 @@
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
 
+#include <winfs/windows_error.h>
+
 namespace nfs3
 {
   namespace {
@@ -1607,13 +1609,13 @@ namespace nfs3
     auto to_dirpath = to_object.fullpath();
     auto to_filepath = to_dirpath + L'\\' + convert::to_wstring(args.to.name);
 
-    success = winfs::file_t::move(from_filepath, to_filepath);
+    auto move_ret = winfs::file_t::move(from_filepath, to_filepath);
 
     result.from_directory_wcc.after = file_attr_from_object(from_object, from_filehandle_view.volume_file_id);
     result.to_directory_wcc.after = file_attr_from_object(to_object, to_filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (!move_ret) {
+        result.status = to_nfs3_error(move_ret.get_error());
         return result;
       }
 
@@ -2149,6 +2151,51 @@ namespace nfs3
     calls.set(21, { "COMMIT", commit_rpc });
 
     return result;
+  }
+
+  status_t to_nfs3_error(windows::win32_error_code_t win32_error){
+      status_t nfs_error;
+      switch (win32_error){
+      case ERROR_SUCCESS:
+          nfs_error = status_t::OK;
+          break;
+      case ERROR_FILE_NOT_FOUND:
+      case ERROR_PATH_NOT_FOUND:
+          nfs_error = status_t::ERR_NO_ENTRY;
+          break;
+      case ERROR_TOO_MANY_OPEN_FILES:
+      case ERROR_WRITE_FAULT:
+      case ERROR_READ_FAULT:
+          nfs_error = status_t::ERR_IO;
+          break;
+      case ERROR_INVALID_HANDLE:
+          nfs_error = status_t::ERR_STALE;
+          break;
+      case ERROR_NOT_ENOUGH_MEMORY:
+      case ERROR_OUTOFMEMORY:
+      case ERROR_HANDLE_DISK_FULL:
+      case ERROR_DISK_FULL:
+          nfs_error = status_t::ERR_NOSPC;
+         break;
+      case ERROR_INVALID_DRIVE:
+      case ERROR_DEV_NOT_EXIST:
+          nfs_error = status_t::ERR_NODEV;
+          break;
+      case ERROR_FILE_EXISTS:
+      case ERROR_ALREADY_EXISTS:
+          nfs_error = status_t::ERR_EXIST;
+          break;
+      case ERROR_ACCESS_DENIED:
+          nfs_error = status_t::ERR_PERM;
+          break;
+      case ERROR_INVALID_ACCESS:
+          nfs_error = status_t::ERR_ACCESS;
+          break;
+      default:
+          nfs_error = status_t::ERR_SERVERFAULT;
+          break;
+      }
+      return nfs_error;
   }
 
 } // namespace nfs3

@@ -1,7 +1,6 @@
 #include "windows_error.h"
 
 #include <windows.h>
-#include "nfs/nfs3.h"
 
 namespace windows{
 
@@ -26,6 +25,12 @@ std::string& win32_code_to_text(win32_error_code_t error_code, std::string &stri
     LocalFree(tmp);
     return string;
 }
+}
+
+win32_return_t::win32_return_t (bool returned_as_bool) {
+    this->first = returned_as_bool;
+    if (!this->first)
+        this->second = GetLastError();
 }
 
 win32_return_t::win32_return_t (std::function<bool (void)> win32_call)
@@ -54,49 +59,5 @@ std::string win32_return_t::to_string() const{
     return msg;
 }
 
-uint32_t to_nfs3_error(win32_error_code_t win32_error){
-    nfs3::status_t nfs_error;
-    switch (win32_error){
-    case ERROR_SUCCESS:
-        nfs_error = nfs3::status_t::OK;
-        break;
-    case ERROR_FILE_NOT_FOUND:
-    case ERROR_PATH_NOT_FOUND:
-        nfs_error = nfs3::status_t::ERR_NO_ENTRY;
-        break;
-    case ERROR_TOO_MANY_OPEN_FILES:
-    case ERROR_WRITE_FAULT:
-    case ERROR_READ_FAULT:
-        nfs_error = nfs3::status_t::ERR_IO;
-        break;
-    case ERROR_INVALID_HANDLE:
-        nfs_error = nfs3::status_t::ERR_STALE;
-        break;
-    case ERROR_NOT_ENOUGH_MEMORY:
-    case ERROR_OUTOFMEMORY:
-    case ERROR_HANDLE_DISK_FULL:
-    case ERROR_DISK_FULL:
-        nfs_error = nfs3::status_t::ERR_NOSPC;
-       break;
-    case ERROR_INVALID_DRIVE:
-    case ERROR_DEV_NOT_EXIST:
-        nfs_error = nfs3::status_t::ERR_NODEV;
-        break;
-    case ERROR_FILE_EXISTS:
-    case ERROR_ALREADY_EXISTS:
-        nfs_error = nfs3::status_t::ERR_EXIST;
-        break;
-    case ERROR_ACCESS_DENIED:
-        nfs_error = nfs3::status_t::ERR_PERM;
-        break;
-    case ERROR_INVALID_ACCESS:
-        nfs_error = nfs3::status_t::ERR_ACCESS;
-        break;
-    default:
-        nfs_error = nfs3::status_t::ERR_SERVERFAULT;
-        break;
-    }
-    return static_cast<uint32_t> (nfs_error);
-}
 
 }
