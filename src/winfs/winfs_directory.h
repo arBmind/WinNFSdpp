@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <string>
 
+#include "windows_error.h"
+
 namespace winfs {
 
   struct directory_entry_t {
@@ -54,16 +56,11 @@ namespace winfs {
 
   struct directory_t {
 
-    static DWORD create(const std::wstring& path) {
-      DWORD code = ERROR_SUCCESS;
-      const bool result = ::CreateDirectoryW(
-            path.c_str(), // FileName
-            nullptr // SecurityAttributes
-            );
-      if (!result){
-          code = GetLastError();
-      }
-      return code;
+    static windows::win32_return_t create(const std::wstring& path) {
+      return windows::win32_return_t(::CreateDirectoryW(
+                                         path.c_str(), // FileName
+                                         nullptr // SecurityAttributes
+                                         ));
     }
 
     static bool remove(const std::wstring& path) {

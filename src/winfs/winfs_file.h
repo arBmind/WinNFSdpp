@@ -26,8 +26,8 @@ namespace winfs {
 
   struct file_t {
 
-    static bool remove(std::wstring& filepath) {
-      return ::DeleteFileW(filepath.c_str());
+    static windows::win32_return_t remove(std::wstring& filepath) {
+      return windows::win32_return_t(::DeleteFileW(filepath.c_str()));
     }
 
     static windows::win32_return_t move(std::wstring& from, std::wstring& to) {

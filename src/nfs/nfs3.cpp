@@ -1012,7 +1012,7 @@ namespace nfs3
           }
         else result.access &= ~(ACCESS_LOOKUP | ACCESS_DELETE);
       }
-
+//CURSOR BUG access vergisst auch die post_op_attr zurück zu geben
     result.status = status_t::OK;
     DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
@@ -1272,7 +1272,7 @@ namespace nfs3
 
     auto file = winfs::create_file<FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES>(filepath);
     if (!file.valid()) {
-        result.status = status_t::ERR_IO;
+        result.status = to_nfs3_error(windows::win32_return_t(false).get_error());
         result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
         return result;
       }
@@ -1344,13 +1344,12 @@ namespace nfs3
     auto dirpath = object.fullpath();
     auto filepath = dirpath + L'\\' + convert::to_wstring(args.where.name);
 
-    uint32_t create_success = winfs::directory_t::create(filepath);
+    auto create_success = winfs::directory_t::create(filepath);
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
     if (create_success) {
-        assert(create_success == 183);
-        result.status = status_t::ERR_EXIST;//Thats the one
+        result.status = to_nfs3_error(create_success.get_error());
         return result;
       }
     auto target = winfs::open_path<FILE_READ_ATTRIBUTES>(filepath);
@@ -1427,12 +1426,12 @@ namespace nfs3
     auto dirpath = object.fullpath();
     auto filepath = dirpath + L'\\' + convert::to_wstring(args.name);
 
-    success = winfs::file_t::remove(filepath);
+    auto remove_success = winfs::file_t::remove(filepath);
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (!remove_success) {
+        result.status = to_nfs3_error(remove_success.get_error());
         return result;
       }
 
