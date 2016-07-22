@@ -18,10 +18,28 @@
 #include <glog/logging.h>
 
 #include <winfs/windows_error.h>
+#include <binary/binary_builder.h>
 
 namespace nfs3
 {
   namespace {
+
+  template <typename T>
+  auto to_hex_string (T &&d) -> std::string {
+      static_assert(CHAR_BIT == 8, "Byte must be size of an octett");
+      std::vector<uint8_t> data(sizeof(d));
+      for (size_t i = 0; i < sizeof(d); ++i){
+          data[i] = *(reinterpret_cast<const uint8_t*>(&d)+i);
+      }
+      std::stringstream s; s << "0x";
+
+      for (auto i = data.begin(); i != data.end(); ++i){
+          s << std::setfill ('0') << std::setw(sizeof(*i)*2) << std::hex << +*i;
+      }
+
+      return s.str();
+  }
+
     struct filehandle_reader_t {
       filehandle_reader_t(const binary_reader_t& reader)
         : filehandle_m(xdr::opaque_reader<FILEHANDLE_SIZE>(reader, 0))
@@ -1348,7 +1366,7 @@ namespace nfs3
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
-    if (create_success) {
+    if (!create_success) {
         result.status = to_nfs3_error(create_success.get_error());
         return result;
       }
