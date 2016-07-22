@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <glog/logging.h>
 
 struct mount_aliases_t {
   using source_t = uint32_t;
@@ -38,13 +39,13 @@ public:
   }
 
   bool add(source_t source, const windows_path_t& windows_path, const alias_path_t& alias_path = {}) {
-    assert(alias_path.empty() || check_alias_path(alias_path));
+    CHECK(alias_path.empty() || check_alias_path(alias_path));
     std::unique_lock<std::shared_timed_mutex> lock(store_mutex_m);
     return add_safe(source, windows_path, alias_path);
   }
 
   void set(source_t source, const alias_vector_t& alias_vector) {
-    assert(std::all_of(alias_vector.begin(), alias_vector.end(), [] (const windows_alias_path_pair_t& pair) {
+    CHECK(std::all_of(alias_vector.begin(), alias_vector.end(), [] (const windows_alias_path_pair_t& pair) {
         return pair.second.empty() || check_alias_path(pair.second);
       }));
     std::unique_lock<std::shared_timed_mutex> lock(store_mutex_m);

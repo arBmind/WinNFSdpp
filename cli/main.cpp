@@ -13,6 +13,7 @@ DEFINE_string(user_id,"0", "User ID");
 DEFINE_string(group_id,"0", "Group ID");
 DEFINE_string(pathFile,"", "File with local export Paths");
 DEFINE_string(cachePath,"./mount_cache", "Mount cache path");
+DEFINE_string(id,"0 0", "WARNING IGNORED RIGHT NOW"); //TODO add handling of ID
 
 #include "cli.h"
 
@@ -20,16 +21,20 @@ int main(int argc, char *argv[])
 {
     const std::string version = WINNFSDPP_VERSION;
 
-    gflags::SetUsageMessage("<flags> <export path> <alias path>");
+    gflags::SetUsageMessage("<flags>");
     gflags::SetVersionString(version);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     google::InitGoogleLogging(argv[0]);
     LOG(INFO) << "WINNFSDPP Version: " << version;
+    try{
+        LOG(INFO) << "Starting windows socket sesstion";
+        wsa_session_t wsa_session(2, 2);
+        program_t program;
+        program.run();
+        LOG(INFO) << "Returned from CLI loop, exiting";
+    } catch (const std::exception &e) {
+        LOG(ERROR) << e.what();
+    }
 
-    LOG(INFO) << "Starting windows socket sesstion";
-    wsa_session_t wsa_session(2, 2);
-    program_t program;
-    program.run();
-    LOG(INFO) << "Returned from CLI loop, exiting";
 }

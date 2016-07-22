@@ -7,6 +7,8 @@
 #include <string>
 #include <cstdint>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 
 struct binary_reader_t
 {
@@ -18,6 +20,8 @@ struct binary_reader_t
   {}
 
   static binary_reader_t binary(const binary_t& binary) {
+    if (binary.empty())
+        return binary_reader_t();
     auto begin = &binary[0];
     auto end = begin + binary.size();
     return binary_reader_t(begin, end);
@@ -81,7 +85,16 @@ struct binary_reader_t
     return result;
   }
 
+  std::string get_hex_string(size_t offset, size_t size) const{
+      std::stringstream s; s << "0x";
+      it requested_end = (size >= this->size()) ? end_m : begin_m + size;
+      for (auto i = begin_m; i != requested_end; ++i){
+          s << std::setfill ('0') << std::setw(sizeof(*i)*2) << std::hex << +*i;
+      }
+      return s.str();
+  }
+
 private:
-  it begin_m;
-  it end_m;
+  it begin_m = nullptr;
+  it end_m = nullptr;
 };

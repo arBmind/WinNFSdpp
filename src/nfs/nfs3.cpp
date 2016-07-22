@@ -13,9 +13,33 @@
 #include <iostream>
 #endif
 
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
+
+#include <winfs/windows_error.h>
+#include <binary/binary_builder.h>
+
 namespace nfs3
 {
   namespace {
+
+  template <typename T>
+  auto to_hex_string (T &&d) -> std::string {
+      static_assert(CHAR_BIT == 8, "Byte must be size of an octett");
+      std::vector<uint8_t> data(sizeof(d));
+      for (size_t i = 0; i < sizeof(d); ++i){
+          data[i] = *(reinterpret_cast<const uint8_t*>(&d)+i);
+      }
+      std::stringstream s; s << "0x";
+
+      for (auto i = data.begin(); i != data.end(); ++i){
+          s << std::setfill ('0') << std::setw(sizeof(*i)*2) << std::hex << +*i;
+      }
+
+      return s.str();
+  }
+
     struct filehandle_reader_t {
       filehandle_reader_t(const binary_reader_t& reader)
         : filehandle_m(xdr::opaque_reader<FILEHANDLE_SIZE>(reader, 0))
@@ -696,7 +720,7 @@ namespace nfs3
     inline wcc_attr_t wcc_attr_from_BASIC_and_STANDARD_INFO(const FILE_BASIC_INFO& basic_info, const FILE_STANDARD_INFO& standard_info) {
       wcc_attr_t result;
       result.size = standard_info.EndOfFile.QuadPart;
-      std::cout << "FROM size: " << result.size << std::endl;
+      DLOG(INFO) << "FROM size: " << result.size ;
       result.mtime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.LastWriteTime);
       result.ctime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.ChangeTime);
       return result;
@@ -711,8 +735,8 @@ namespace nfs3
       result.gid = 0;
       result.size = standard_info.EndOfFile.QuadPart;
       result.used = standard_info.AllocationSize.QuadPart;
-      std::cout << "TO size: " << result.size << " used: " << result.used << std::endl;
-      result.fsid = 7;
+      DLOG(INFO) << "TO size: " << result.size << " used: " << result.used ;
+      result.fsid = id.VolumeSerialNumber;
       result.fileid = *reinterpret_cast<const uint64_t*>(&id.FileId); // filehandle_view.volume_file_id.FileId; - too large
       result.atime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.LastAccessTime);
       result.mtime = wintime::convert_LARGE_INTEGER_to_unix_time(basic_info.LastWriteTime);
@@ -742,7 +766,7 @@ namespace nfs3
 
   get_attr_result_t rpc_program::get_attr(const filehandle_t& filehandle)
   {
-    std::cout << "Get Attr..." << std::endl;
+    DLOG(INFO) << "Get Attr..." ;
     get_attr_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(filehandle);
@@ -772,13 +796,13 @@ namespace nfs3
 
     result.attr = attr.get<file_attr_t>();
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
   }
 
   set_attr_result_t rpc_program::set_attr(const set_attr_args_t& args)
   {
-    std::cout << "Set Attr..." << std::endl;
+    DLOG(INFO) << "Set Attr..." ;
     set_attr_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.filehandle);
@@ -861,14 +885,14 @@ namespace nfs3
     result.wcc_data.after = file_attr_from_object(file, filehandle_view.volume_file_id);
 
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
 
   }
 
   lookup_result_t rpc_program::lookup(const dir_op_args_t& args)
   {
-    std::cout << "Lookup... " << args.name << std::endl;
+    DLOG(INFO) << "Lookup... " << args.name ;
     lookup_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.directory);
@@ -949,13 +973,14 @@ namespace nfs3
     lookup_filehandle.volume_file_id = lookup_id;
 
     result.status = status_t::OK;
-    std::wcout << "...success " << lookup_file.fullpath() << std::endl;
+    DLOG(INFO) << "LOOKUP retunred " << binary_reader_t::binary(result.object_handle).get_hex_string(0,sizeof(result.object_handle))
+               <<  " for directory" << convert::to_string(lookup_file.fullpath());
     return result;
   }
 
   access_result_t rpc_program::access(const access_args_t& args)
   {
-    std::cout << "Access..." << std::endl;
+    DLOG(INFO) << "Access..." ;
     access_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.filehandle);
@@ -1005,15 +1030,15 @@ namespace nfs3
           }
         else result.access &= ~(ACCESS_LOOKUP | ACCESS_DELETE);
       }
-
+//CURSOR BUG access vergisst auch die post_op_attr zurück zu geben
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
   }
 
   readlink_result_t rpc_program::readlink(const filehandle_t& filehandle)
   {
-    std::cout << "Readlink..." << std::endl;
+    DLOG(INFO) << "Readlink..." ;
     readlink_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(filehandle);
@@ -1049,13 +1074,13 @@ namespace nfs3
       });
 
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
   }
 
   read_result_t rpc_program::read(const read_args_t& args)
   {
-    std::cout << "Read..." << std::endl;
+    DLOG(INFO) << "Read..." ;
     read_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.filehandle);
@@ -1115,13 +1140,13 @@ namespace nfs3
         || (args.offset + result.data.size() == (uint64_t)standard_info.EndOfFile.QuadPart);
 
     result.status = status_t::OK;
-    std::wcout << "...success " << object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(object.fullpath()) ;
     return result;
   }
 
   write_result_t rpc_program::write(const write_args_t& args)
   {
-    std::cout << "Write..." << std::endl;
+    DLOG(INFO) << "Write..." ;
     write_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.filehandle);
@@ -1141,7 +1166,7 @@ namespace nfs3
         ? mount_directory.by_id<FILE_READ_ATTRIBUTES | FILE_GENERIC_WRITE, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0>(filehandle_view.volume_file_id.FileId)
         :*/ mount_directory.by_id<FILE_READ_ATTRIBUTES | FILE_GENERIC_WRITE, 0, 0>(filehandle_view.volume_file_id.FileId);
     if (!object.valid()) {
-        std::wcout << "Failed Open: " << GetLastError() << std::endl;
+        DLOG(INFO) << "Failed Open: " << GetLastError() ;
         result.status = status_t::ERR_ACCESS;
         return result;
       }
@@ -1183,7 +1208,7 @@ namespace nfs3
 
     success = file.write(args.data);
     if (!success) {
-        std::wcout << "Failed Write: " << GetLastError() << std::endl;
+        DLOG(INFO) << "Failed Write: " << GetLastError() ;
         result.status = status_t::ERR_IO;
         return result;
       }
@@ -1200,13 +1225,13 @@ namespace nfs3
     result.verifier = cookie_verifier_m;
 
     result.status = status_t::OK;
-    std::wcout << "...success " << object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(object.fullpath()) ;
     return result;
   }
 
   create_result_t rpc_program::create(const create_args_t& args)
   {
-    std::cout << "Create..." << std::endl;
+    DLOG(INFO) << "Create..." ;
     create_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.where.directory);
@@ -1265,7 +1290,7 @@ namespace nfs3
 
     auto file = winfs::create_file<FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES>(filepath);
     if (!file.valid()) {
-        result.status = status_t::ERR_IO;
+        result.status = to_nfs3_error(windows::win32_return_t(false).get_error());
         result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
         return result;
       }
@@ -1281,13 +1306,12 @@ namespace nfs3
     result.object.set(created_filehandle);
 
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath()) ;
     return result;
   }
 
   mkdir_result_t rpc_program::mkdir(const mkdir_args_t& args)
   {
-    std::cout << "MkDir..." << std::endl;
     mkdir_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.where.directory);
@@ -1338,12 +1362,12 @@ namespace nfs3
     auto dirpath = object.fullpath();
     auto filepath = dirpath + L'\\' + convert::to_wstring(args.where.name);
 
-    success = winfs::directory_t::create(filepath);
+    auto create_success = winfs::directory_t::create(filepath);
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (!create_success) {
+        result.status = to_nfs3_error(create_success.get_error());
         return result;
       }
     auto target = winfs::open_path<FILE_READ_ATTRIBUTES>(filepath);
@@ -1363,13 +1387,13 @@ namespace nfs3
     result.object.set(created_filehandle);
 
     result.status = status_t::OK;
-    std::wcout << "...success " << object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(object.fullpath()) ;
     return result;
   }
 
   remove_result_t rpc_program::remove(const dir_op_args_t& args)
   {
-    std::cout << "Remove..." << std::endl;
+    DLOG(INFO) << "Remove..." ;
     remove_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.directory);
@@ -1420,23 +1444,23 @@ namespace nfs3
     auto dirpath = object.fullpath();
     auto filepath = dirpath + L'\\' + convert::to_wstring(args.name);
 
-    success = winfs::file_t::remove(filepath);
+    auto remove_success = winfs::file_t::remove(filepath);
 
     result.directory_wcc.after = file_attr_from_object(object, filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (!remove_success) {
+        result.status = to_nfs3_error(remove_success.get_error());
         return result;
       }
 
     result.status = status_t::OK;
-    std::wcout << "...success " << object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(object.fullpath()) ;
     return result;
   }
 
   rmdir_result_t rpc_program::rmdir(const dir_op_args_t& args)
   {
-    std::cout << "RmDir..." << std::endl;
+    DLOG(INFO) << "RmDir..." ;
     rmdir_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.directory);
@@ -1497,13 +1521,13 @@ namespace nfs3
       }
 
     result.status = status_t::OK;
-    std::wcout << "...success " << object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(object.fullpath()) ;
     return result;
   }
 
   rename_result_t rpc_program::rename(const rename_args_t& args)
   {
-    std::cout << "Rename... " << args.from.name << " to " << args.to.name << std::endl;
+    DLOG(INFO) << "Rename... " << args.from.name << " to " << args.to.name ;
     rename_result_t result;
 
     // build from data
@@ -1602,24 +1626,24 @@ namespace nfs3
     auto to_dirpath = to_object.fullpath();
     auto to_filepath = to_dirpath + L'\\' + convert::to_wstring(args.to.name);
 
-    success = winfs::file_t::move(from_filepath, to_filepath);
+    auto move_ret = winfs::file_t::move(from_filepath, to_filepath);
 
     result.from_directory_wcc.after = file_attr_from_object(from_object, from_filehandle_view.volume_file_id);
     result.to_directory_wcc.after = file_attr_from_object(to_object, to_filehandle_view.volume_file_id);
 
-    if (!success) {
-        result.status = status_t::ERR_IO;
+    if (!move_ret) {
+        result.status = to_nfs3_error(move_ret.get_error());
         return result;
       }
 
     result.status = status_t::OK;
-    std::wcout << "...success " << from_object.fullpath() << " to " << to_object.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(from_object.fullpath()) << " to " << convert::to_string(to_object.fullpath()) ;
     return result;
   }
 
   read_dir_result_t rpc_program::read_dir(const read_dir_args_t& args)
   {
-    std::cout << "Read Dir..." << std::endl;
+    DLOG(INFO) << "Read Dir..." ;
     read_dir_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.directory);
@@ -1681,7 +1705,7 @@ namespace nfs3
             result.is_finished = false;
             return false;
           }
-        std::wcout << entry_filename << std::endl;
+        DLOG(INFO) << convert::to_string(entry_filename) ;
 
         read_dir_entry_t result_entry;
         result_entry.file_id = 1;
@@ -1696,14 +1720,14 @@ namespace nfs3
         return result;
       }
     else
-      std::wcout << "...success " << file.fullpath() << std::endl;
+      DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     return result;
   }
 
   read_dir_plus_result_t rpc_program::read_dir_plus(const read_dir_plus_args_t& args)
   {
-    std::cout << "Read Dir Plus..." << std::endl;
+    DLOG(INFO) << "Read Dir Plus..." ;
     read_dir_plus_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(args.directory);
@@ -1777,7 +1801,7 @@ namespace nfs3
             result.is_finished = false;
             return false;
           }
-        std::wcout << entry_filename << std::endl;
+        DLOG(INFO) << convert::to_string(entry_filename);
 
         read_dir_plus_entry_t result_entry;
         auto entry_id = entry.id();
@@ -1815,7 +1839,7 @@ namespace nfs3
         return result;
       }
     else
-      std::wcout << "...success " << file.fullpath() << std::endl;
+      DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     result.status = status_t::OK;
     return result;
@@ -1823,7 +1847,7 @@ namespace nfs3
 
   fs_stat_result_t rpc_program::fs_stat(const filehandle_t &root)
   {
-    std::cout << "FS stat..." << std::endl;
+    DLOG(INFO) << "FS stat..." ;
     fs_stat_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(root);
@@ -1865,13 +1889,13 @@ namespace nfs3
     result.free_files = 1ull << 32;
     result.available_files = 1ull << 32;
     result.invar_sec = 0;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
     return result;
   }
 
   fs_info_result_t rpc_program::fs_info(const filehandle_t& root)
   {
-    std::cout << "FS info..." << std::endl;
+    DLOG(INFO) << "FS info..." ;
     fs_info_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(root);
@@ -1904,14 +1928,14 @@ namespace nfs3
     result.status = status_t::OK;
     // TODO: query filesystem info of windows
 
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     return result;
   }
 
   path_conf_result_t rpc_program::path_conf(const filehandle_t& filehandle)
   {
-    std::cout << "Path Conf..." << std::endl;
+    DLOG(INFO) << "Path Conf..." ;
 
     path_conf_result_t result;
 
@@ -1936,14 +1960,14 @@ namespace nfs3
 
     result.status = status_t::OK;
     // see defaults
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     return result;
   }
 
   commit_result_t rpc_program::commit(const commit_args_t& commit)
   {
-    std::cout << "Commit... offset: " << commit.offset << " count: " << commit.count << std::endl;
+    DLOG(INFO) << "Commit... offset: " << commit.offset << " count: " << commit.count ;
     commit_result_t result;
 
     const auto& filehandle_view = mount_filehandle_t::view_binary(commit.file);
@@ -1982,7 +2006,8 @@ namespace nfs3
     result.file_wcc.after.set(file_attr_from_BASIC_and_STANDARD_INFO(basic_info, standard_info, filehandle_view.volume_file_id));
 
     result.status = status_t::OK;
-    std::wcout << "...success " << file.fullpath() << std::endl;
+    result.verifier = this->cookie_verifier_m;
+    DLOG(INFO) << "...success " << convert::to_string(file.fullpath());
 
     return result;
   }
@@ -1997,6 +2022,7 @@ namespace nfs3
     result.version = VERSION;
 
     auto null_rpc = [=](const args_t& args)->result_t {
+        DLOG(INFO) << "Got NULL in NFS";
         if (!args.parameter_reader.empty()) return {};
         nothing();
         return result_t::respond({});
@@ -2110,6 +2136,13 @@ namespace nfs3
         return result_t::respond(write_commit_result(result));
       };
 
+    auto operation_not_supported = [](const args_t& args)->result_t {
+        LOG(WARNING) << "Not supported NFS function has been called";
+        binary_builder_t builder;
+        builder.append32(nfs3::status_t::ERR_NOTSUPP);
+        return result_t::respond(builder.build());
+    };
+
     auto& calls = result.procedures;
     calls.set( 0, { "NULL", null_rpc });
     calls.set( 1, { "GETATTR", get_attr_rpc });
@@ -2121,12 +2154,12 @@ namespace nfs3
     calls.set( 7, { "WRITE", write_rpc });
     calls.set( 8, { "CREATE", create_rpc });
     calls.set( 9, { "MKDIR", mkdir_rpc });
-    calls.set(10, { "SYMLINK", {}/*symlink_rpc*/ });
-    calls.set(11, { "MKNOD", {}/*mk_node_rpc*/ });
+    calls.set(10, { "SYMLINK", operation_not_supported/*symlink_rpc*/ });
+    calls.set(11, { "MKNOD", operation_not_supported/*mk_node_rpc*/ });
     calls.set(12, { "REMOVE", remove_rpc });
     calls.set(13, { "RMDIR", rmdir_rpc });
     calls.set(14, { "RENAME", rename_rpc });
-    calls.set(15, { "LINK", {}/*link_rpc*/ });
+    calls.set(15, { "LINK", operation_not_supported/*link_rpc*/ });
     calls.set(16, { "READDIR", read_dir_rpc });
     calls.set(17, { "READDIRPLUS", read_dir_plus_rpc });
     calls.set(18, { "FSSTAT", fs_stat_rpc });
@@ -2135,6 +2168,51 @@ namespace nfs3
     calls.set(21, { "COMMIT", commit_rpc });
 
     return result;
+  }
+
+  status_t to_nfs3_error(windows::win32_error_code_t win32_error){
+      status_t nfs_error;
+      switch (win32_error){
+      case ERROR_SUCCESS:
+          nfs_error = status_t::OK;
+          break;
+      case ERROR_FILE_NOT_FOUND:
+      case ERROR_PATH_NOT_FOUND:
+          nfs_error = status_t::ERR_NO_ENTRY;
+          break;
+      case ERROR_TOO_MANY_OPEN_FILES:
+      case ERROR_WRITE_FAULT:
+      case ERROR_READ_FAULT:
+          nfs_error = status_t::ERR_IO;
+          break;
+      case ERROR_INVALID_HANDLE:
+          nfs_error = status_t::ERR_STALE;
+          break;
+      case ERROR_NOT_ENOUGH_MEMORY:
+      case ERROR_OUTOFMEMORY:
+      case ERROR_HANDLE_DISK_FULL:
+      case ERROR_DISK_FULL:
+          nfs_error = status_t::ERR_NOSPC;
+         break;
+      case ERROR_INVALID_DRIVE:
+      case ERROR_DEV_NOT_EXIST:
+          nfs_error = status_t::ERR_NODEV;
+          break;
+      case ERROR_FILE_EXISTS:
+      case ERROR_ALREADY_EXISTS:
+          nfs_error = status_t::ERR_EXIST;
+          break;
+      case ERROR_ACCESS_DENIED:
+          nfs_error = status_t::ERR_PERM;
+          break;
+      case ERROR_INVALID_ACCESS:
+          nfs_error = status_t::ERR_ACCESS;
+          break;
+      default:
+          nfs_error = status_t::ERR_SERVERFAULT;
+          break;
+      }
+      return nfs_error;
   }
 
 } // namespace nfs3

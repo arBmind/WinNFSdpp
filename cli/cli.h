@@ -34,7 +34,7 @@ struct path_config_file_syncer_t {
                               mount_aliases_t::source_t source)
         : aliases_m(aliases), file_path_m(file_path), source_m(source),
           notifier_m(convert::to_wstring(file_path_m),
-                     [this] (file_change_notifier::full_path_t) {read();})
+                     [this] (windows::file_change_notifier::full_path_t) {read();})
     {
         read();
         notifier_m.start_watching();
@@ -68,7 +68,7 @@ private:
     mount_aliases_t& aliases_m;
     mount_aliases_t::source_t source_m;
     std::string file_path_m;
-    file_change_notifier notifier_m;
+    windows::file_change_notifier notifier_m;
 };
 
 struct program_t {

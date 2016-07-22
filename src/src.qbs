@@ -52,6 +52,8 @@ Product {
         "server/rpc_server.h",
         "winfs/file_change_notifier.cpp",
         "winfs/file_change_notifier.h",
+        "winfs/windows_error.cpp",
+        "winfs/windows_error.h",
         "winfs/windows_handle.cpp",
         "winfs/windows_handle.h",
         "winfs/winfs.h",
@@ -67,6 +69,7 @@ Product {
 
     Depends { name: "cpp" }
     Depends { name: "GSL" }
+    Depends { name: "GLog" }
     cpp.includePaths: [ "." ]
     cpp.dynamicLibraries: [ "ws2_32", "mswsock" ]
     cpp.minimumWindowsVersion: '6.2' // windows 8
@@ -75,6 +78,7 @@ Product {
     Export {
         Depends { name: "cpp" }
         Depends { name: "GSL" }
+        Depends { name: "GLog" }
         cpp.cxxLanguageVersion: "c++14"
         cpp.includePaths: [ "." ]
         cpp.dynamicLibraries: [ "ws2_32", "mswsock" ]

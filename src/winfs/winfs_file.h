@@ -11,6 +11,8 @@
 #include <string>
 #include <cstdint>
 
+#include "windows_error.h"
+
 namespace winfs {
 
   template<typename>
@@ -24,12 +26,12 @@ namespace winfs {
 
   struct file_t {
 
-    static bool remove(std::wstring& filepath) {
-      return ::DeleteFileW(filepath.c_str());
+    static windows::win32_return_t remove(std::wstring& filepath) {
+      return windows::win32_return_t(::DeleteFileW(filepath.c_str()));
     }
 
-    static bool move(std::wstring& from, std::wstring& to) {
-      return ::MoveFileW(from.c_str(), to.c_str());
+    static windows::win32_return_t move(std::wstring& from, std::wstring& to) {
+      return windows::win32_return_t(::MoveFileW(from.c_str(), to.c_str()));
     }
 
     bool seek(int64_t offset, seek_method_t method = seek_method_t::begin) {

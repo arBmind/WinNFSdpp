@@ -10,7 +10,9 @@
 #include "rpc/rpc_router.h"
 
 #include <thread>
-#include <iostream>
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
 
 #include <string>
 #include <map>
@@ -89,7 +91,7 @@ public:
               }
           });
         if ( !success) {
-            std::cout << "udp socket error " << WSAGetLastError() << std::endl;
+            LOG(FATAL) << "udp socket error " << WSAGetLastError() << std::endl;
             return;
           }
       });

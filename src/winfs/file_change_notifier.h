@@ -9,6 +9,9 @@
 #include <future>
 #include <cstdint>
 
+#include "windows_error.h"
+
+namespace windows{
 
 /*! @brief Class that uses a (hopefully)
  *  native API to watch a file for changes and call a user supplied callback
@@ -68,27 +71,6 @@ public:
                          std::function<void(full_path_t, change_event)> callback
                          );
 
-    /*! @brief Exception class for the windows API aka WIN32 functions which are using GetLastError*/
-    class win32_exception : public std::runtime_error{
-    public:
-        /*! @param msg User supplied message which will lead the full exception text
-         * @param get_last_error_code Error code from GetLastError
-         */
-        explicit win32_exception(std::string msg, std::uint32_t get_last_error_code);
-        /*! @return The user supplied message + the error code + a string description of the error code
-         * */
-        const char* what() const override {
-            return final_msg.c_str();
-        }
-        /*! @returns The Win32 specific error code*/
-        uint32_t code () const {
-            return this->error_code;
-        }
-        virtual ~win32_exception(){}
-    private:
-        std::string final_msg;
-        uint32_t error_code;
-    };
 
 private:
     using internal_path_t = std::wstring;
@@ -106,6 +88,7 @@ private:
     void waiting_function();
 
 };
+}
 
 
 

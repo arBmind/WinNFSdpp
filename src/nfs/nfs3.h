@@ -10,6 +10,7 @@
 
 #include <string>
 #include <cstdint>
+#include "winfs/windows_error.h"
 
 /**
  * @brief nfs implementation according to RFC1813
@@ -421,5 +422,7 @@ namespace nfs3
     const mount_cache_t& mount_cache_m;
     cookie_verifier_t cookie_verifier_m;
   };
+
+  status_t to_nfs3_error(windows::win32_error_code_t win32_error);
 
 } // namespace nfs3
